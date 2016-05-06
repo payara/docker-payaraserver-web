@@ -1,7 +1,7 @@
 FROM java:8-jdk
 
-ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.co/Payara+Downloads/Payara+4.1.1.161.1/payara-web-4.1.1.161.1.zip
-ENV PAYARA_VERSION 161.1
+ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.co/Payara+Downloads/Payara+4.1.1.162/payara-web-4.1.1.162.zip
+ENV PAYARA_VERSION 162
 ENV PKG_FILE_NAME payara-web-$PAYARA_VERSION.zip
 ENV PAYARA_PATH /opt/payara41
 

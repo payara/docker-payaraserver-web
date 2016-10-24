@@ -46,7 +46,15 @@ Once admin port is exposed, it is possible to deploy applications remotely, outs
 
 Payara Server automatically deploys all deployable files in the `autodeploy` directory of the current domain. For example `/opt/payara41/glassfish/domains/domain1/autodeploy` in the default domain `domain1`.
 
-You can extend the docker image to add your deployables into that directory and run the resuting docker image as the original one.
+You can mount this folder as a docker volume to a directory, which contains your applications. The following will run Payara Server in the docker and will start applications that exist in the directory `~/payara/apps` on the local file-system:
+
+```
+docker run -p 8080:8080 \
+ -v ~/payara/apps:/opt/payara41/glassfish/domains/domain1/autodeploy \
+ payara/server-full bin/asadmin start-domain -v
+```
+
+Another approach is to extend the docker image to add your deployables into the `autodeploy` directory and run the resulting docker image instead of the original one.
 
 The following example Dockerfile will build an image that deploys `myapplication.war` when Payara Server domain `domain1` is started:
 
@@ -61,7 +69,7 @@ COPY myapplication.war /opt/payara41/glassfish/domains/domain1/autodeploy
 Payara Server installation is located in the `/opt/payara41` directory. This directory is the default working directory of the docker image. The directory name is deliberately free of any versioning so that any scripts written to work with one version can be seamlessly migrated to the latest docker image.
 
 - Full and Web editions are derived from the OpenJDK 8 images with a Debian Jessie base
-- Micro editions are built on OpenJDK 8 images with an Alpine linux base to keep image size as small as possible.
+- Micro editions are built on OpenJDK 8 images with an Alpine Linux base to keep image size as small as possible.
 
 Payara Server is a patched, enhanced and supported application server derived from GlassFish Server Open Source Edition 4.x. Visit [www.payara.fish](http://www.payara.fish) for full 24/7 support and lots of free resources.
 

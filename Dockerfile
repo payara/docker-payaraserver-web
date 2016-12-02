@@ -42,4 +42,6 @@ RUN \
  $PAYARA_PATH/bin/asadmin --user $ADMIN_USER --passwordfile=/opt/pwdfile enable-secure-admin && \
  $PAYARA_PATH/bin/asadmin restart-domain
 
+# cleanup
 RUN rm /opt/tmpfile
+RUN rm /opt/$PKG_FILE_NAME

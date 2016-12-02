@@ -15,7 +15,7 @@ RUN wget --quiet -O /opt/$PKG_FILE_NAME $PAYARA_PKG
 RUN unzip -qq /opt/$PKG_FILE_NAME -d /opt
 
 RUN mkdir -p $PAYARA_PATH/deployments
-RUN useradd -b /opt -m -s /bin/bash payara && echo payara:payara | chpasswd
+RUN useradd -b /opt -m -s /bin/bash -d $PAYARA_PATH payara && echo payara:payara | chpasswd
 RUN chown -R payara:payara /opt
 
 # Default payara ports to expose

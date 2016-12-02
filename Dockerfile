@@ -4,6 +4,8 @@ ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.fish/Payara+Downloads/P
 ENV PAYARA_VERSION 164
 ENV PKG_FILE_NAME payara-web-$PAYARA_VERSION.zip
 ENV PAYARA_PATH /opt/payara41
+ENV ADMIN_USER admin
+ENV ADMIN_PASSWORD admin
 
 RUN \
  apt-get update && \ 
@@ -26,18 +28,18 @@ WORKDIR $PAYARA_PATH
 # set credentials to admin/admin 
 
 RUN echo 'AS_ADMIN_PASSWORD=\n\
-AS_ADMIN_NEWPASSWORD=admin\n\
+AS_ADMIN_NEWPASSWORD='$ADMIN_PASSWORD'\n\
 EOF\n'\
 >> /opt/tmpfile
 
-RUN echo 'AS_ADMIN_PASSWORD=admin\n\
+RUN echo 'AS_ADMIN_PASSWORD='$ADMIN_PASSWORD'\n\
 EOF\n'\
 >> /opt/pwdfile
 
 RUN \
  $PAYARA_PATH/bin/asadmin start-domain && \
- $PAYARA_PATH/bin/asadmin --user admin --passwordfile=/opt/tmpfile change-admin-password && \
- $PAYARA_PATH/bin/asadmin --user admin --passwordfile=/opt/pwdfile enable-secure-admin && \
+ $PAYARA_PATH/bin/asadmin --user $ADMIN_USER --passwordfile=/opt/tmpfile change-admin-password && \
+ $PAYARA_PATH/bin/asadmin --user $ADMIN_USER --passwordfile=/opt/pwdfile enable-secure-admin && \
  $PAYARA_PATH/bin/asadmin restart-domain
 
 RUN rm /opt/tmpfile

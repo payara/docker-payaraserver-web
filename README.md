@@ -15,8 +15,10 @@ Updated repository for Payara Dockerfiles. This repository is for the **Web Prof
 To boot the default domain with HTTP listener exported on port 8080:
 
 ```
-docker run -p 8080:8080 payara/server-web bin/asadmin start-domain -v
+docker run -p 8080:8080 payara/server-web
 ```
+
+The Docker container specifies the default entry point, which starts the default domain `domain1` in foreground so that Payara Server becomes the main process.
 
 ## Open ports
 
@@ -28,13 +30,13 @@ Most common default open ports that can be exposed outside of the container:
 
 ## Administration
 
-To boot and export admin interface on port 4848:
+To boot and export admin interface on port 4848 (and also the default HTTP listener on port 8080):
 
 ```
-docker run -p 4848:4848 payara/server-web bin/asadmin start-domain -v
+docker run -p 4848:4848 -p 8080:8080 payara/server-web
 ```
 
-The admin interface is secured by default, accessible using HTTPS on the host machine: [https://localhost:4848](https://localhost:4848) The default user and password is `admin`.
+Because Payara Server doesn't allow insecure remote admin connections (outside of a Docker container), the admin interface is secured by default (in both the default `domain1` as well as `payaradomain`), accessible using HTTPS on the host machine: [https://localhost:4848](https://localhost:4848) The default user and password is `admin`.
 
 ## Application deployment
 
@@ -44,25 +46,62 @@ Once admin port is exposed, it is possible to deploy applications remotely, outs
 
 ### Deployment on startup
 
-Payara Server automatically deploys all deployable files in the `autodeploy` directory of the current domain. For example `/opt/payara41/glassfish/domains/domain1/autodeploy` in the default domain `domain1`.
+The docker image supports 2 ways of deploying applications on server startup.
 
-You can mount this folder as a docker volume to a directory, which contains your applications. The following will run Payara Server in the docker and will start applications that exist in the directory `~/payara/apps` on the local file-system:
+#### Deployment on startup using a startup script
 
-```
-docker run -p 8080:8080 \
- -v ~/payara/apps:/opt/payara41/glassfish/domains/domain1/autodeploy \
- payara/server-full bin/asadmin start-domain -v
-```
+Since version 172, Payara Server supports running asadmin commands automatically after the domain is started, including the deploy command to deploy applications. This is the preferred way to deploy applications on Docker container startup.
 
-Another approach is to extend the docker image to add your deployables into the `autodeploy` directory and run the resulting docker image instead of the original one.
+The default Docker entry point will scan the folder `$DEPLOY_DIR` for files and folders and deploy them automatically after the domain is started.
 
-The following example Dockerfile will build an image that deploys `myapplication.war` when Payara Server domain `domain1` is started:
+In order to deploy applications, you can mount the `$DEPLOY_DIR` (`/opt/payara41/deployments`) folder as a docker volume to a directory, which contains your applications. The following will run Payara Server in the docker and will start applications that exist in the directory `~/payara/apps` on the local file-system:
 
 ```
-FROM payara/server-web:162
-
-COPY myapplication.war /opt/payara41/glassfish/domains/domain1/autodeploy
+docker run -p 8080:8080 -v ~/payara/apps:/opt/payara41/deployments payara/server-web
 ```
+
+In order to build a Docker image that contains your applications and starts them automatically, you can copy the applications into the `$DEPLOY_DIR` directory. and run the resulting docker image instead of the original one.
+
+The following example Dockerfile will build an image that starts Payara Server and deploys `myapplication.war` when the Docker container is started:
+
+```
+FROM payara/server-web
+
+COPY myapplication.war $DEPLOY_DIR
+```
+
+You can now build the Docker image and run the application `myapplication.war` with the following commands:
+
+```
+docker build -t mycompany/myapplication .
+```
+
+```
+docker run -p 8080:8080 mycompany/myapplication
+```
+
+#### Deployment on startup using the autodeployment directory
+
+When running the `domain1` domain, Payara server automatically deploys all deployable files in the directory specified by the `$AUTODEPLOY_DIR` environment variable (it refers to the `autodeploy` directory in the domain directory of `domain1`). 
+
+You can deploy applications in the same way as with the `$DEPLOY_DIR` directory as described above.
+
+However, deploying applications using the autodeployment directory is discouraged because of many drawbacks:
+
+ - this approach uses only default deployment options, it's not possible to define any deploy parameters, e.g. the context root and more
+ - it requires a writable filesystem, what might be cumbersome when deploying from a mounted directory
+ - this functionality is disabled in the `payaradomain` domain for security reasons and has to be enabled before using it with that domain
+
+## Selection of domain
+
+The default entry point starts the server in the `domain1` domain. If you want to start it with a different domain, e.g. `payaradomain`, you may provide the domain name in the `PAYARA_DOMAIN` environment variable. The following would start Payara Server in `payaradomain`, without changing the entry point:
+
+```
+docker run -p 8080:8080 --env PAYARA_DOMAIN=payaradomain payara/server-web
+```
+
+If you also want to use the `AUTODEPLOY_DIR` variable (although this is discouraged), you need to overwrite the value of this variable accordingly. It points to the autodeploy directory of the `domain1` domain by default.
+
 
 # Details
 

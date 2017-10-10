@@ -102,6 +102,17 @@ docker run -p 8080:8080 --env PAYARA_DOMAIN=payaradomain payara/server-web
 
 If you also want to use the `AUTODEPLOY_DIR` variable (although this is discouraged), you need to overwrite the value of this variable accordingly. It points to the autodeploy directory of the `domain1` domain by default.
 
+## The default Docker entry point
+
+The default entry point does the following:
+
+- generates an asadmin script which deploys all applications found in the directory `/opt/payara41/deployments`, as described in _"Deployment on startup using a startup script"_
+- starts the server using the `startInForeground.sh` startup script, which avoids running 2 JVM instances as opposed to the command `asadmin start-domain --verbose`
+- uses the generated asadmin as a post boot command file to deploy all found applications at server start
+
+It's possible to run a custom set of asadmin commands by specifying the `POSTBOOT_COMMANDS` environment variable to point to the abslute path of the custom post boot command file. In that case, the default entry point won't deploy applications in `/opt/payara41/deployments`, you will have to specify the deploy command(s) in your custom post boot command file.
+
+You may also want to completely redefine the default entry point with the `--entrypoint` argument of `docker run`.
 
 # Details
 

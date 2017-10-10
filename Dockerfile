@@ -18,12 +18,11 @@ ENV PAYARA_VERSION 173
 
 ENV PKG_FILE_NAME payara-web-${PAYARA_VERSION}.zip
 
-# Download Payara Server and install
+# Download Payara Server, install, then remove downloaded file
 RUN \
  wget --quiet -O /opt/${PKG_FILE_NAME} ${PAYARA_PKG} && \
  unzip -qq /opt/${PKG_FILE_NAME} -d /opt && \
  chown -R payara:payara /opt && \
- # cleanup
  rm /opt/${PKG_FILE_NAME}
 
 USER payara
@@ -65,7 +64,7 @@ ENV AUTODEPLOY_DIR ${PAYARA_PATH}/glassfish/domains/${PAYARA_DOMAIN}/autodeploy
 # Default payara ports to expose
 EXPOSE 4848 8009 8080 8181
 
-ENV DEPLOY_COMMANDS=${PAYARA_PATH}/post-boot-commands.asadmin
+ENV POSTBOOT_COMMANDS=${PAYARA_PATH}/post-boot-commands.asadmin
 COPY generate_deploy_commands.sh ${PAYARA_PATH}/generate_deploy_commands.sh
 USER root
 RUN \
@@ -73,4 +72,4 @@ RUN \
  chmod a+x ${PAYARA_PATH}/generate_deploy_commands.sh
 USER payara
 
-ENTRYPOINT ${PAYARA_PATH}/generate_deploy_commands.sh && ${PAYARA_PATH}/bin/asadmin start-domain -v --postbootcommandfile ${DEPLOY_COMMANDS} ${PAYARA_DOMAIN}
+ENTRYPOINT ${PAYARA_PATH}/generate_deploy_commands.sh && ${PAYARA_PATH}/bin/asadmin start-domain -v --postbootcommandfile ${POSTBOOT_COMMANDS} ${PAYARA_DOMAIN}

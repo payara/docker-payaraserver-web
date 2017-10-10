@@ -65,11 +65,15 @@ ENV AUTODEPLOY_DIR ${PAYARA_PATH}/glassfish/domains/${PAYARA_DOMAIN}/autodeploy
 EXPOSE 4848 8009 8080 8181
 
 ENV POSTBOOT_COMMANDS=${PAYARA_PATH}/post-boot-commands.asadmin
+
 COPY generate_deploy_commands.sh ${PAYARA_PATH}/generate_deploy_commands.sh
+COPY bin/startInForeground.sh ${PAYARA_PATH}/bin/startInForeground.sh
+
 USER root
 RUN \
  chown -R payara:payara ${PAYARA_PATH}/generate_deploy_commands.sh && \
- chmod a+x ${PAYARA_PATH}/generate_deploy_commands.sh
+ chmod a+x ${PAYARA_PATH}/generate_deploy_commands.sh && \
+ chmod a+x ${PAYARA_PATH}/bin/startInForeground.sh
 USER payara
 
-ENTRYPOINT ${PAYARA_PATH}/generate_deploy_commands.sh && ${PAYARA_PATH}/bin/asadmin start-domain -v --postbootcommandfile ${POSTBOOT_COMMANDS} ${PAYARA_DOMAIN}
+ENTRYPOINT ${PAYARA_PATH}/generate_deploy_commands.sh && ${PAYARA_PATH}/bin/startInForeground.sh --postbootcommandfile ${POSTBOOT_COMMANDS} ${PAYARA_DOMAIN}

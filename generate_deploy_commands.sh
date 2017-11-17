@@ -23,7 +23,7 @@ if [ x$1 != x ]
     DEPLOY_OPTS="$*"
 fi
 
-echo '# deployments after boot' > $DEPLOY_COMMANDS
+echo '# deployments after boot' >> $DEPLOY_COMMANDS
 for deployment in "${DEPLOY_DIR}"/*
   do
     echo "deploy --force --enabled=true $DEPLOY_OPTS $deployment" >> $DEPLOY_COMMANDS

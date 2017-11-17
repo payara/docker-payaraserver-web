@@ -13,8 +13,8 @@ RUN \
  useradd -b /opt -m -s /bin/bash -d ${PAYARA_PATH} payara && echo payara:payara | chpasswd
 
 # specify Payara version to download
-ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.fish/Payara+Downloads/Payara+4.1.2.173/payara-web-4.1.2.173.zip
-ENV PAYARA_VERSION 173
+ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.fish/Payara+Downloads/Payara+4.1.2.174/payara-web-4.1.2.174.zip
+ENV PAYARA_VERSION 174
 
 ENV PKG_FILE_NAME payara-web-${PAYARA_VERSION}.zip
 

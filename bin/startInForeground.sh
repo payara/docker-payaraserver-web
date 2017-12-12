@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ##########################################################################################################
 #
 # This script is to execute Payara Server in foreground, mainly in a docker environment. 
@@ -39,7 +39,7 @@ fi
 # - surround each line except with parenthesis to allow spaces in paths
 # - remove lines before and after the command line and squash commands on a single line
 
-OUTPUT=`"$AS_ADMIN_PATH" start-domain --dry-run $@`
+OUTPUT=`"$AS_ADMIN_PATH" start-domain --dry-run "$@"`
 STATUS=$?
 if [ "$STATUS" -ne 0 ]
   then
@@ -47,7 +47,7 @@ if [ "$STATUS" -ne 0 ]
     exit 1
 fi
 
-COMMAND=`echo "$OUTPUT" | sed -n -e 's/^\(.\)/"\1/' -e 's/\(.\)$/\1"/' -e '2,/^$/p'`
+COMMAND=`echo "$OUTPUT" | sed -n -e '2,/^$/p'`
 
 echo Executing Payara Server with the following command line:
 echo $COMMAND
@@ -55,13 +55,15 @@ echo
 
 # Run the server in foreground - read master password from variable or file or use the default "changeit" password
 
+set +x
 if test "$AS_ADMIN_MASTERPASSWORD"x = x -a -f "$PASSWORD_FILE"
   then
-    . "$PASSWORD_FILE"
+    source "$PASSWORD_FILE"
 fi
 if test "$AS_ADMIN_MASTERPASSWORD"x = x
   then
     AS_ADMIN_MASTERPASSWORD=changeit
 fi
-echo "AS_ADMIN_MASTERPASSWORD=$AS_ADMIN_MASTERPASSWORD" | eval $COMMAND
+exec $COMMAND < <(echo "AS_ADMIN_MASTERPASSWORD=$AS_ADMIN_MASTERPASSWORD")
+
 

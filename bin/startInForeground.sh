@@ -30,6 +30,7 @@ fi
 if echo "$1" | grep -e '--passwordfile=' > /dev/null
   then
     PASSWORD_FILE=`echo "$1" | sed 's/--passwordfile=//'`
+    PASSWORD_FILE_ARG="$1"
     shift 1
 fi
 
@@ -39,7 +40,7 @@ fi
 # - surround each line except with parenthesis to allow spaces in paths
 # - remove lines before and after the command line and squash commands on a single line
 
-OUTPUT=`"$AS_ADMIN_PATH" start-domain --dry-run "$@"`
+OUTPUT=`"$AS_ADMIN_PATH" start-domain "$PASSWORD_FILE_ARG" --dry-run "$@"`
 STATUS=$?
 if [ "$STATUS" -ne 0 ]
   then
@@ -64,6 +65,7 @@ if test "$AS_ADMIN_MASTERPASSWORD"x = x
   then
     AS_ADMIN_MASTERPASSWORD=changeit
 fi
-exec $COMMAND < <(echo "AS_ADMIN_MASTERPASSWORD=$AS_ADMIN_MASTERPASSWORD")
+echo "AS_ADMIN_MASTERPASSWORD=$AS_ADMIN_MASTERPASSWORD" > /tmp/masterpwdfile
+exec $COMMAND < /tmp/masterpwdfile
 
 

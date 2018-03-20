@@ -6,14 +6,14 @@ RUN \
 
 ENV ADMIN_USER admin
 
-ENV PAYARA_PATH /opt/payara41
+ENV PAYARA_PATH /opt/payara5
 
 RUN \ 
  mkdir -p ${PAYARA_PATH}/deployments && \
  useradd -b /opt -m -s /bin/bash -d ${PAYARA_PATH} payara && echo payara:payara | chpasswd
 
 # specify Payara version to download
-ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.fish/Payara+Downloads/Payara+4.1.2.181/payara-web-4.1.2.181.zip
+ENV PAYARA_PKG https://search.maven.org/remotecontent?filepath=fish/payara/distributions/payara-web/5.181/payara-web-5.181.zip
 ENV PAYARA_VERSION 181
 
 ENV PKG_FILE_NAME payara-web-${PAYARA_VERSION}.zip
@@ -48,13 +48,13 @@ RUN ${PAYARA_PATH}/bin/asadmin --user ${ADMIN_USER} --passwordfile=/opt/tmpfile 
  ${PAYARA_PATH}/bin/asadmin stop-domain domain1 && \
  rm -rf ${PAYARA_PATH}/glassfish/domains/domain1/osgi-cache
 
- # payaradomain
+ # production
 RUN \
- ${PAYARA_PATH}/bin/asadmin --user ${ADMIN_USER} --passwordfile=/opt/tmpfile change-admin-password --domain_name=payaradomain && \
- ${PAYARA_PATH}/bin/asadmin start-domain payaradomain && \
+ ${PAYARA_PATH}/bin/asadmin --user ${ADMIN_USER} --passwordfile=/opt/tmpfile change-admin-password --domain_name=production && \
+ ${PAYARA_PATH}/bin/asadmin start-domain production && \
  ${PAYARA_PATH}/bin/asadmin --user ${ADMIN_USER} --passwordfile=/opt/pwdfile enable-secure-admin && \
- ${PAYARA_PATH}/bin/asadmin stop-domain payaradomain && \
- rm -rf ${PAYARA_PATH}/glassfish/domains/payaradomain/osgi-cache
+ ${PAYARA_PATH}/bin/asadmin stop-domain production && \
+ rm -rf ${PAYARA_PATH}/glassfish/domains/production/osgi-cache
 
 # cleanup
 RUN rm /opt/tmpfile

@@ -13,8 +13,8 @@ RUN \
  useradd -b /opt -m -s /bin/bash -d ${PAYARA_PATH} payara && echo payara:payara | chpasswd
 
 # specify Payara version to download
-ENV PAYARA_PKG https://search.maven.org/remotecontent?filepath=fish/payara/distributions/payara-web/5.181/payara-web-5.181.zip
-ENV PAYARA_VERSION 181
+ENV PAYARA_PKG https://search.maven.org/remotecontent?filepath=fish/payara/distributions/payara-web/5.182/payara-web-5.182.zip
+ENV PAYARA_VERSION 182
 
 ENV PKG_FILE_NAME payara-web-${PAYARA_VERSION}.zip
 

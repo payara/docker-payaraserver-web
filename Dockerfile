@@ -19,11 +19,12 @@ ENV PAYARA_VERSION 182
 ENV PKG_FILE_NAME payara-web-${PAYARA_VERSION}.zip
 
 # Download Payara Server, install, then remove downloaded file
+RUN wget --quiet -O /opt/${PKG_FILE_NAME} ${PAYARA_PKG}
 RUN \
- wget --quiet -O /opt/${PKG_FILE_NAME} ${PAYARA_PKG} && \
  unzip -qq /opt/${PKG_FILE_NAME} -d /opt && \
  chown -R payara:payara /opt && \
- rm /opt/${PKG_FILE_NAME}
+ rm /opt/${PKG_FILE_NAME} && \
+ ln -s ${PAYARA_PATH} /opt/payara
 
 USER payara
 WORKDIR ${PAYARA_PATH}
@@ -66,7 +67,7 @@ ENV AUTODEPLOY_DIR ${PAYARA_PATH}/glassfish/domains/${PAYARA_DOMAIN}/autodeploy
 # Default payara ports to expose
 EXPOSE 4848 8009 8080 8181
 
-ENV POSTBOOT_COMMANDS=${PAYARA_PATH}/post-boot-commands.asadmin
+ENV POSTBOOT_COMMANDS ${PAYARA_PATH}/post-boot-commands.asadmin
 
 COPY generate_deploy_commands.sh ${PAYARA_PATH}/generate_deploy_commands.sh
 COPY bin/startInForeground.sh ${PAYARA_PATH}/bin/startInForeground.sh

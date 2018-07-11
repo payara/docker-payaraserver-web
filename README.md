@@ -54,10 +54,10 @@ Since version 172, Payara Server supports running asadmin commands automatically
 
 The default Docker entry point will scan the folder `$DEPLOY_DIR` for files and folders and deploy them automatically after the domain is started.
 
-In order to deploy applications, you can mount the `$DEPLOY_DIR` (`/opt/payara41/deployments`) folder as a docker volume to a directory, which contains your applications. The following will run Payara Server in the docker and will start applications that exist in the directory `~/payara/apps` on the local file-system:
+In order to deploy applications, you can mount the `$DEPLOY_DIR` (`/opt/payara/deployments`) folder as a docker volume to a directory, which contains your applications. The following will run Payara Server in the docker and will start applications that exist in the directory `~/payara/apps` on the local file-system:
 
 ```
-docker run -p 8080:8080 -v ~/payara/apps:/opt/payara41/deployments payara/server-web
+docker run -p 8080:8080 -v ~/payara/apps:/opt/payara/deployments payara/server-web
 ```
 
 In order to build a Docker image that contains your applications and starts them automatically, you can copy the applications into the `$DEPLOY_DIR` directory. and run the resulting docker image instead of the original one.
@@ -106,17 +106,17 @@ If you also want to use the `AUTODEPLOY_DIR` variable (although this is discoura
 
 The default entry point does the following:
 
-- generates an asadmin script which deploys all applications found in the directory `/opt/payara41/deployments`, as described in _"Deployment on startup using a startup script"_
+- generates an asadmin script which deploys all applications found in the directory `/opt/payara/deployments`, as described in _"Deployment on startup using a startup script"_
 - starts the server using the `startInForeground.sh` startup script, which avoids running 2 JVM instances as opposed to the command `asadmin start-domain --verbose`
 - uses the generated asadmin as a post boot command file to deploy all found applications at server start
 
-It's possible to run a custom set of asadmin commands by specifying the `POSTBOOT_COMMANDS` environment variable to point to the abslute path of the custom post boot command file. In that case, the default entry point won't deploy applications in `/opt/payara41/deployments`, you will have to specify the deploy command(s) in your custom post boot command file.
+It's possible to run a custom set of asadmin commands by specifying the `POSTBOOT_COMMANDS` environment variable to point to the abslute path of the custom post boot command file. In that case, the default entry point won't deploy applications in `/opt/payara/deployments`, you will have to specify the deploy command(s) in your custom post boot command file.
 
 You may also want to completely redefine the default entry point with the `--entrypoint` argument of `docker run`.
 
 # Details
 
-Payara Server installation is located in the `/opt/payara41` directory. This directory is the default working directory of the docker image. The directory name is deliberately free of any versioning so that any scripts written to work with one version can be seamlessly migrated to the latest docker image.
+Payara Server installation is located in the `/opt/payara` directory. This directory is the default working directory of the docker image. The directory name is deliberately free of any versioning so that any scripts written to work with one version can be seamlessly migrated to the latest docker image.
 
 - Full and Web editions are derived from the OpenJDK 8 images with a Debian Jessie base
 - Micro editions are built on OpenJDK 8 images with an Alpine Linux base to keep image size as small as possible.

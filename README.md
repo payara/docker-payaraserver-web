@@ -83,18 +83,30 @@ docker run -p 8080:8080 mycompany/myapplication
 
 ## The default Docker entry point
 
-The default entry point is `/bin/bash` as per the docker default. The default `CMD` command runs the following scripts:
+The default entry point is [tini](https://github.com/krallin/tini), as the JVM should not run as PID 1. The default `CMD` argument for `tini` runs the
+`bin/entrypoint.sh` script in *exec* mode, which in turn runs the following:
 
-- `${SCRIPT_DIR}/generate_deploy_commands.sh`. This script outputs deploy commands to the post boot command file located at `$POSTBOOT_COMMANDS` (default `$CONFIG_DIR/post-boot-commands.asadmin`). If the deploy commands are already found in that file, this script does nothing.
+- `${SCRIPT_DIR}/init_1_generate_deploy_commands.sh`. This script outputs deploy commands to the post boot command file located at `$POSTBOOT_COMMANDS` (default `$CONFIG_DIR/post-boot-commands.asadmin`). If the deploy commands are already found in that file, this script does nothing.
+- `${SCRIPT_DIR}/init_*.sh` scripts that you may provide for custom use as waiting or initializing during startup, **before** Glassfish kicks in.
 - `${SCRIPT_DIR}/startInForeground.sh`. This script starts the server in the foreground, in a manner that allows the Payara instance to be controlled by the docker host. The server will run the pre boot commands found in the file at `$PREBOOT_COMMANDS`, as well as the post boot commands found in the file at `$POSTBOOT_COMMANDS`.
 
-Because of the default entrypoint being unchanged, you can override the default instruction set to run any number of preparatory commands for testing. For example, the following command will start the container at a bash prompt, allowing you to browse the image and configure the Payara Server instance as you like:
+### Testing, browsing and configuring a container instance
+
+For testing or other purposes, you can override the default entrypoint. For example, the following command will start the container at a bash prompt, allowing you to browse the image and configure the Payara Server instance as you like:
 
 ```
 docker run -p 8080:8080 -it payara/server-web bash
 ```
 
+### Custom commands at startup time
+
 It's possible to run a custom set of asadmin commands either by specifying the `POSTBOOT_COMMANDS` environment variable to point to the absolute path of the custom post boot command file, or by providing a custom file located at `$POSTBOOT_COMMANDS` (default `$CONFIG_DIR/post-boot-commands.asadmin`).
+
+In cases this is not sufficient, you can add your own init scripts to the `${SCRIPT_DIR}`. You need to follow the naming convention: `init_<num>_<text>.sh`, where `<num>` gives you a simple option to run scripts in order. Be aware that the default deploy commands script is using this, too.
+
+If you do not want to create a sub-image, you can also mount a volume to `/opt/payara/scripts/init.d` and each `*.sh` file in there will be executed in standard file order.
+
+**Please note:** you can combine both approaches, but please keep in mind that scripts from `init.d` will run *after* those from subimages!
 
 ## Environment Variables
 

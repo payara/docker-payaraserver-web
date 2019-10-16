@@ -1,43 +1,78 @@
-FROM java:8-jdk
-
-ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.co/payara-web-prerelease.zip
-ENV PAYARA_VERSION latest
-ENV PKG_FILE_NAME payara-web-$PAYARA_VERSION.zip
-ENV PAYARA_PATH /opt/payara41
+FROM openjdk:8-jdk
 
 RUN \
  apt-get update && \ 
  apt-get install -y unzip 
 
-RUN wget --quiet -O /opt/$PKG_FILE_NAME $PAYARA_PKG
-RUN unzip -qq /opt/$PKG_FILE_NAME -d /opt
+ENV ADMIN_USER admin
 
-RUN mkdir -p $PAYARA_PATH/deployments
-RUN useradd -b /opt -m -s /bin/bash payara && echo payara:payara | chpasswd
-RUN chown -R payara:payara /opt
+ENV PAYARA_PATH /opt/payara41
+
+RUN \ 
+ mkdir -p ${PAYARA_PATH}/deployments && \
+ useradd -b /opt -m -s /bin/bash -d ${PAYARA_PATH} payara && echo payara:payara | chpasswd
+
+# specify Payara version to download
+ENV PAYARA_PKG https://s3-eu-west-1.amazonaws.com/payara.fish/payara-5-web-prerelease.zip
+ENV PAYARA_VERSION prerelease
+
+ENV PKG_FILE_NAME payara-web-${PAYARA_VERSION}.zip
+
+# Download Payara Server and install
+RUN \
+ wget --quiet -O /opt/${PKG_FILE_NAME} ${PAYARA_PKG} && \
+ unzip -qq /opt/${PKG_FILE_NAME} -d /opt && \
+ chown -R payara:payara /opt && \
+ # cleanup
+ rm /opt/${PKG_FILE_NAME}
+
+USER payara
+WORKDIR ${PAYARA_PATH}
+
+# set credentials to admin/admin 
+
+ENV ADMIN_PASSWORD admin
+
+RUN echo 'AS_ADMIN_PASSWORD=\n\
+AS_ADMIN_NEWPASSWORD='${ADMIN_PASSWORD}'\n\
+EOF\n'\
+>> /opt/tmpfile
+
+RUN echo 'AS_ADMIN_PASSWORD='${ADMIN_PASSWORD}'\n\
+EOF\n'\
+>> /opt/pwdfile
+
+ # domain1
+RUN ${PAYARA_PATH}/bin/asadmin --user ${ADMIN_USER} --passwordfile=/opt/tmpfile change-admin-password && \
+ ${PAYARA_PATH}/bin/asadmin start-domain domain1 && \
+ ${PAYARA_PATH}/bin/asadmin --user ${ADMIN_USER} --passwordfile=/opt/pwdfile enable-secure-admin && \
+ ${PAYARA_PATH}/bin/asadmin stop-domain domain1 && \
+ rm -rf ${PAYARA_PATH}/glassfish/domains/domain1/osgi-cache
+
+ # payaradomain
+RUN \
+ ${PAYARA_PATH}/bin/asadmin --user ${ADMIN_USER} --passwordfile=/opt/tmpfile change-admin-password --domain_name=payaradomain && \
+ ${PAYARA_PATH}/bin/asadmin start-domain payaradomain && \
+ ${PAYARA_PATH}/bin/asadmin --user ${ADMIN_USER} --passwordfile=/opt/pwdfile enable-secure-admin && \
+ ${PAYARA_PATH}/bin/asadmin stop-domain payaradomain && \
+ rm -rf ${PAYARA_PATH}/glassfish/domains/payaradomain/osgi-cache
+
+# cleanup
+RUN rm /opt/tmpfile
+
+ENV PAYARA_DOMAIN domain1
+ENV DEPLOY_DIR ${PAYARA_PATH}/deployments
+ENV AUTODEPLOY_DIR ${PAYARA_PATH}/glassfish/domains/${PAYARA_DOMAIN}/autodeploy
 
 # Default payara ports to expose
 EXPOSE 4848 8009 8080 8181
 
-USER payara
-WORKDIR $PAYARA_PATH
-
-
-# set credentials to admin/admin 
-
-RUN echo 'AS_ADMIN_PASSWORD=\n\
-AS_ADMIN_NEWPASSWORD=admin\n\
-EOF\n'\
->> /opt/tmpfile
-
-RUN echo 'AS_ADMIN_PASSWORD=admin\n\
-EOF\n'\
->> /opt/pwdfile
-
+ENV DEPLOY_COMMANDS=${PAYARA_PATH}/post-boot-commands.asadmin
+COPY generate_deploy_commands.sh ${PAYARA_PATH}/generate_deploy_commands.sh
+USER root
 RUN \
- $PAYARA_PATH/bin/asadmin start-domain && \
- $PAYARA_PATH/bin/asadmin --user admin --passwordfile=/opt/tmpfile change-admin-password && \
- $PAYARA_PATH/bin/asadmin --user admin --passwordfile=/opt/pwdfile enable-secure-admin && \
- $PAYARA_PATH/bin/asadmin restart-domain
+ chown -R payara:payara ${PAYARA_PATH}/generate_deploy_commands.sh && \
+ chmod a+x ${PAYARA_PATH}/generate_deploy_commands.sh
+USER payara
 
-RUN rm /opt/tmpfile
+ENTRYPOINT ${PAYARA_PATH}/generate_deploy_commands.sh && ${PAYARA_PATH}/bin/asadmin start-domain -v --postbootcommandfile ${DEPLOY_COMMANDS} ${PAYARA_DOMAIN}

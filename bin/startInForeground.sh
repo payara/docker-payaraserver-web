@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ##########################################################################################################
 #
 # This script is to execute Payara Server in foreground, mainly in a docker environment. 
@@ -12,15 +12,25 @@
 #
 # It's possible to use any arguments of the start-domain command as arguments to startInForeground.sh
 #
-# By default, this script executes the asadmin tool which is found in the same directory. 
-# The AS_ADMIN_PATH environment variable can be used to specify an alternative path to the asadmin tool.
+# Environment variables used:
+#   - $ADMIN_USER - the username to use for the asadmin utility.
+#   - $PASSWORD_FILE - the password file to use for the asadmin utility.
+#   - $PREBOOT_COMMANDS - the pre boot command file.
+#   - $POSTBOOT_COMMANDS - the post boot command file.
+#   - $DOMAIN_NAME - the name of the domain to start.
+#   - $JVM_ARGS - extra JVM options to pass to the Payara Server instance.
+#   - $AS_ADMIN_MASTERPASSWORD - the master password for the Payara Server instance.
+#
+# This script executes the asadmin tool which is expected at ~/appserver/bin/asadmin.
 #
 ##########################################################################################################
 
-if [ -z "$AS_ADMIN_PATH" ]
-  then
-    AS_ADMIN_PATH=`dirname $0`/asadmin
-fi
+# Check required variables are set
+if [ -z $ADMIN_USER ]; then echo "Variable ADMIN_USER is not set."; exit 1; fi
+if [ -z $PASSWORD_FILE ]; then echo "Variable PASSWORD_FILE is not set."; exit 1; fi
+if [ -z $PREBOOT_COMMANDS ]; then echo "Variable PREBOOT_COMMANDS is not set."; exit 1; fi
+if [ -z $POSTBOOT_COMMANDS ]; then echo "Variable POSTBOOT_COMMANDS is not set."; exit 1; fi
+if [ -z $DOMAIN_NAME ]; then echo "Variable DOMAIN_NAME is not set."; exit 1; fi
 
 # The following command gets the command line to be executed by start-domain
 # - print the command line to the server with --dry-run, each argument on a separate line
@@ -28,7 +38,11 @@ fi
 # - surround each line except with parenthesis to allow spaces in paths
 # - remove lines before and after the command line and squash commands on a single line
 
-OUTPUT=`"$AS_ADMIN_PATH" start-domain --dry-run $@`
+# Create pre and post boot command files if they don't exist
+touch $POSTBOOT_COMMANDS
+touch $PREBOOT_COMMANDS
+
+OUTPUT=`${PAYARA_DIR}/bin/asadmin --user=${ADMIN_USER} --passwordfile=${PASSWORD_FILE} start-domain --dry-run --prebootcommandfile=${PREBOOT_COMMANDS} --postbootcommandfile=${POSTBOOT_COMMANDS} $@ $DOMAIN_NAME`
 STATUS=$?
 if [ "$STATUS" -ne 0 ]
   then
@@ -36,12 +50,24 @@ if [ "$STATUS" -ne 0 ]
     exit 1
 fi
 
-COMMAND=`echo "$OUTPUT" | sed -n -e '/-read-stdin/d' -e 's/^\(.\)/"\1/' -e 's/\(.\)$/\1"/' -e '2,/^$/p'`
+COMMAND=`echo "$OUTPUT"\
+ | sed -n -e '2,/^$/p'\
+ | sed 's/glassfish.jar/glassfish.jar '"$JVM_ARGS"'/' `
 
 echo Executing Payara Server with the following command line:
-echo $COMMAND
+echo $COMMAND | tr ' ' '\n'
 echo
 
-# Run the server in foreground:
+# Run the server in foreground - read master password from variable or file or use the default "changeit" password
 
-eval $COMMAND
+set +x
+if test "$AS_ADMIN_MASTERPASSWORD"x = x -a -f "$PASSWORD_FILE"
+  then
+    source "$PASSWORD_FILE"
+fi
+if test "$AS_ADMIN_MASTERPASSWORD"x = x
+  then
+    AS_ADMIN_MASTERPASSWORD=changeit
+fi
+echo "AS_ADMIN_MASTERPASSWORD=$AS_ADMIN_MASTERPASSWORD" > /tmp/masterpwdfile
+exec ${COMMAND} < /tmp/masterpwdfile

@@ -8,9 +8,9 @@ FROM azul/zulu-openjdk:8u222
 EXPOSE 4848 9009 8080 8181
 
 # Payara version (5.183+)
-ARG PAYARA_VERSION=5.194
+ARG PAYARA_VERSION=5.201
 ARG PAYARA_PKG=https://search.maven.org/remotecontent?filepath=fish/payara/distributions/payara-web/${PAYARA_VERSION}/payara-web-${PAYARA_VERSION}.zip
-ARG PAYARA_SHA1=68371aa8f5fb6aff5eeeb6d5ee881828a1a171ca
+ARG PAYARA_SHA1=4c5122befc9f55969f5a332dd6e16979cda7c94f
 ARG TINI_VERSION=v0.18.0
 
 # Initialize the configurable environment variables
